@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from ultralytics import YOLO
+import base64
+from io import BytesIO
+from PIL import Image
 
 app = FastAPI()
 
@@ -18,6 +21,15 @@ async def detection():
         #result.show()
         #result.save(filename='detect/output_image.jpg')
     return {"success!"}
+
+@app.post("/photo")
+async def photo(photo: str):
+    image_data = base64.b64decode(photo)
+    image = Image.open(BytesIO(image_data))
+    results = model(image)
+    for result in results:
+        print(result)
+    return "success!"
 
 @app.get("/")
 async def root():
