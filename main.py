@@ -7,6 +7,7 @@ from io import BytesIO
 from PIL import Image
 import uvicorn
 import cv2
+from face_detect import app as face_detect_app, on_startup_face_detect
 
 app = FastAPI()
 
@@ -17,7 +18,11 @@ global model
 def on_startup():
     global model
     model = YOLO('detect/yolov8n.pt')
+    on_startup_face_detect()
 
+
+# face_detect.py의 라우터를 포함
+app.mount("/face_detect", face_detect_app)
 
 @app.get("/test")
 async def detection():
@@ -134,6 +139,8 @@ async def detection():
             print(box)
 
     return json_results
+
+
 
 
 if __name__ == "__main__":
