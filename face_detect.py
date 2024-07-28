@@ -97,3 +97,44 @@ async def detect_face(image_data: ImageData):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+class MultiFaceRequest(BaseModel):
+    base64_image: str
+    required_faces: int
+
+
+@app.post("/detect_multiple_face")
+async def detect_multiple_face(request: MultiFaceRequest):
+    try:
+        # 디코딩
+        image_bytes = base64.b64decode(request.base64_image)
+        image_np = np.frombuffer(image_bytes, np.uint8)
+        img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
+
+        if img is None:
+            raise HTTPException(status_code=400, detail="이미지를 디코딩할 수 없습니다.")
+
+        img, bboxes = face_detector.findFaces(img, draw=True)
+
+        # 정확도가 70% 이상인 얼굴만 카운트
+        face_count = sum(1 for bbox in bboxes if bbox['score'][0] >= 0.7)
+
+        required_faces = request.required_faces
+
+        # 인식 후 결과 보기
+        window_name = f"Image_{np.random.randint(0, 10000)}"
+        print(window_name)
+        cv2.imshow(window_name, img)
+        cv2.waitKey(1000)
+        cv2.destroyAllWindows()
+
+        if face_count < required_faces:
+            message = f"화면에 {face_count}명이 있습니다. 안쪽으로 더 들어와 주십시오"
+            return {"message": message}
+        else:
+            message = f"화면에 {face_count}명이 있습니다."
+            return {"message": message}
+
+    except Exception as e:
+        return JSONResponse(content={"detail": str(e)}, status_code=400)
