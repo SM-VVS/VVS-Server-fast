@@ -17,14 +17,15 @@ def on_startup_face_detect():
 
 
 class ImageData(BaseModel):
-    base64Image: str
+    base64_image: str
+    is_back_camera: bool
 
 
 @app.post("/detect_face")
 async def detect_face(image_data: ImageData):
     try:
         # Decode the base64 string to bytes
-        image_bytes = base64.b64decode(image_data.base64Image)
+        image_bytes = base64.b64decode(image_data.base64_image)
         # Convert bytes to numpy array
         image_np = np.frombuffer(image_bytes, np.uint8)
         # Decode the numpy array to an image
@@ -33,7 +34,11 @@ async def detect_face(image_data: ImageData):
         if img is None:
             raise ValueError("이미지를 디코딩할 수 없습니다.")
 
-        img, bboxes = face_detector.findFaces(img, draw=False)
+        # 전면 카메라의 경우 이미지 좌우 반전
+        if not image_data.is_back_camera:
+            img = cv2.flip(img, 1)
+
+        img, bboxes = face_detector.findFaces(img, draw=True)
         img_height, img_width, _ = img.shape
 
         if bboxes:
@@ -41,8 +46,8 @@ async def detect_face(image_data: ImageData):
             confidence = bboxes[0]["score"][0]
             #x, y는 바운딩 박스 왼쪽 상단 좌표
             x, y, w, h = bbox
-            right_x = x+w
-            bottom_y = y+h
+            right_x = x + w
+            bottom_y = y + h
 
             # 중앙 범위 정의 (20% margin)
             margin = 0.2
@@ -71,12 +76,6 @@ async def detect_face(image_data: ImageData):
             else:
                 message = "얼굴 인식 정확도가 낮습니다. 카메라를 조정하십시오."
 
-            #얼굴 박스 그리기
-            center = bboxes[0]["center"]
-            cv2.circle(img, center, 5, (255, 0, 255), cv2.FILLED)
-            cvzone.putTextRect(img, f'{confidence}%', (x, y - 10))
-            cvzone.cornerRect(img, (x, y, w, h))
-
             # 중앙 범위 그리기
             cv2.line(img, (int(left_bound), 0), (int(left_bound), img_height), (0, 255, 0), 2)
             cv2.line(img, (int(right_bound), 0), (int(right_bound), img_height), (0, 255, 0), 2)
@@ -90,7 +89,7 @@ async def detect_face(image_data: ImageData):
         window_name = f"Image_{np.random.randint(0, 10000)}"
         print(window_name)
         cv2.imshow(window_name, img)
-        cv2.waitKey(2000)
+        cv2.waitKey(1000)
         cv2.destroyAllWindows()
 
         print("message:", message)
