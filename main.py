@@ -7,8 +7,7 @@ from io import BytesIO
 from PIL import Image
 import uvicorn
 import cv2
-from face_detect import app as face_detect_app, on_startup_face_detect
-from face_detect import router as face_detect_router
+from face_detect import router as face_detect_router, on_startup_face_detect
 from whole_body_detect import router as whole_body_detect_router
 
 app = FastAPI()
