@@ -7,7 +7,8 @@ from io import BytesIO
 from PIL import Image
 import uvicorn
 import cv2
-from face_detect import app as face_detect_app, on_startup_face_detect
+from face_detect import router as face_detect_router, on_startup_face_detect
+from whole_body_detect import router as whole_body_detect_router
 
 app = FastAPI()
 
@@ -21,8 +22,9 @@ def on_startup():
     on_startup_face_detect()
 
 
-# face_detect.py의 라우터를 포함
-app.mount("/face_detect", face_detect_app)
+# face_detect.py, whole_body_detect.py의 라우터를 포함
+app.include_router(face_detect_router, prefix="/face_detect")
+app.include_router(whole_body_detect_router, prefix="/whole_body_detect")
 
 @app.get("/test")
 async def detection():
