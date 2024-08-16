@@ -7,4 +7,8 @@ pip install uvicorn
 uvicorn main:app --reload
 
 # 1초마다 이미지 전송
-uvicorn main:app --reload --host=0.0.0.0 --port=8000
+uvicorn main:app --reload --host=0.0.0.0 --port=8080
+
+# port 죽이기
+lsof -i :8080
+kill -9 <PID>
