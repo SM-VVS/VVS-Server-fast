@@ -10,7 +10,7 @@ router = APIRouter()
 # get YOLOv8 model
 yolo_weights_path = 'yolov8n.pt'
 model = YOLO(yolo_weights_path)
-
+# model.predict(source="0", show=True, stream=True, classes=0)
 
 class ImageData(BaseModel):
     base64_image: str
@@ -52,8 +52,8 @@ async def detect_whole_body(image_data: ImageData):
                         print(x1, ", ", y1, ", ", x2, ", ", y2)
 
                         # 바운딩 박스
-                        # cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        # cv2.putText(img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        cv2.putText(img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
                         if x1 == 0:
                             message = "카메라를 왼쪽으로 옮기십시오"
@@ -67,11 +67,10 @@ async def detect_whole_body(image_data: ImageData):
                     else:
                         message = "얼굴 인식 정확도가 낮습니다. 카메라를 조정하십시오."
 
-
         # 이미지 표시
-        # cv2.imshow('Detection Results', img)
-        # cv2.waitKey(1000)
-        # cv2.destroyAllWindows()
+        cv2.imshow('Detection Results', img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
         print("message:", message)
         return {"message": message}
