@@ -80,3 +80,71 @@ async def detect_whole_body(image_data: ImageData):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# full height with yolo (multiple)
+@router.post("/detect_multiple_whole_body")
+async def detect_multiple_whole_body(image_data: ImageData):
+    try:
+        # Decode the base64 string to bytes
+        image_bytes = base64.b64decode(image_data.base64_image)
+        # Convert bytes to numpy array
+        image_np = np.frombuffer(image_bytes, np.uint8)
+        # Decode the numpy array to an image
+        img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
+
+        if img is None:
+            raise ValueError("이미지를 디코딩할 수 없습니다.")
+
+        # 전면 카메라의 경우 이미지 좌우 반전
+        if not image_data.is_back_camera:
+            img = cv2.flip(img, 1)
+
+        # apply
+        results = model(img)
+        message = ""
+        ppl = True
+        boxes = []
+
+        # 결과 시각화
+        for result in results:
+            for bbox in result.boxes:
+                class_id = int(bbox.cls[0])  # 클래스 ID
+                conf = bbox.conf[0]  # 신뢰도
+                if class_id == 0:
+                    if conf > 0.7:
+                        ppl = False
+                        x1, y1, x2, y2 = map(int, bbox.xyxy[0])  # 좌표
+                        boxes.append({
+                            "x1": x1,
+                            "y1": y1,
+                            "x2": x2,
+                            "y2": y2,
+                            "class_id": class_id,
+                            "conf": conf
+                        })
+        if ppl:
+            message = "얼굴을 찾을 수 없습니다. 카메라를 조정하십시오."
+        else:
+            sorted(boxes, key=lambda x: x['x1'])
+
+            message = f"화면에 {len(boxes)}명이 있습니다."
+            for box in boxes:
+                x1, y1, x2, y2 = box['x1'], box['x2'], box['y1'], box['y2']
+                # label = f"{class_id}: {conf:.2f}"  # 레이블 텍스트
+                # print(x1, ", ", y1, ", ", x2, ", ", y2)
+
+                # 바운딩 박스
+                # cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                # cv2.putText(img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+
+        # 이미지 표시
+        # cv2.imshow('Detection Results', img)
+        # cv2.waitKey(1)
+        # cv2.destroyAllWindows()
+
+        # print("message:", message)
+        return {"message": message}
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
