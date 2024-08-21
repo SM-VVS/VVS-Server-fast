@@ -17,7 +17,7 @@ class ImageData(BaseModel):
     is_back_camera: bool
 
 
-# full height with yolo
+# full height with yolo (single)
 @router.post("/detect_whole_body")
 async def detect_whole_body(image_data: ImageData):
     try:
@@ -38,6 +38,7 @@ async def detect_whole_body(image_data: ImageData):
         # apply
         results = model(img)
         message = ""
+        ppl = True
 
         # 결과 시각화
         for result in results:
@@ -45,15 +46,15 @@ async def detect_whole_body(image_data: ImageData):
                 class_id = int(bbox.cls[0])  # 클래스 ID
                 conf = bbox.conf[0]  # 신뢰도
                 if class_id == 0:
-                    if conf > 0.5:
+                    if conf > 0.7:
+                        ppl = False
                         x1, y1, x2, y2 = map(int, bbox.xyxy[0])  # 좌표
-                        label = f"{class_id}: {conf:.2f}"  # 레이블 텍스트
-
-                        print(x1, ", ", y1, ", ", x2, ", ", y2)
+                        #label = f"{class_id}: {conf:.2f}"  # 레이블 텍스트
+                        #print(x1, ", ", y1, ", ", x2, ", ", y2)
 
                         # 바운딩 박스
-                        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        cv2.putText(img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                        # cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        # cv2.putText(img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
                         if x1 == 0:
                             message = "카메라를 왼쪽으로 옮기십시오"
@@ -66,13 +67,15 @@ async def detect_whole_body(image_data: ImageData):
 
                     else:
                         message = "얼굴 인식 정확도가 낮습니다. 카메라를 조정하십시오."
+        if ppl:
+            message = "얼굴을 찾을 수 없습니다. 카메라를 조정하십시오."
 
         # 이미지 표시
-        cv2.imshow('Detection Results', img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.imshow('Detection Results', img)
+        # cv2.waitKey(1)
+        # cv2.destroyAllWindows()
 
-        print("message:", message)
+        #print("message:", message)
         return {"message": message}
 
     except Exception as e:
