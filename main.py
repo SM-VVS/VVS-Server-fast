@@ -10,6 +10,7 @@ import cv2
 from face_detect import router as face_detect_router, on_startup_face_detect
 from whole_body_detect import router as whole_body_detect_router
 from image_describe import router as image_describe_router
+from object_detect import router as object_detect_router
 
 app = FastAPI()
 
@@ -27,6 +28,7 @@ def on_startup():
 app.include_router(face_detect_router, prefix="/face_detect")
 app.include_router(whole_body_detect_router, prefix="/whole_body_detect")
 app.include_router(image_describe_router,prefix="/image_describe")
+app.include_router(object_detect_router, prefix="/object_detect")
 
 @app.get("/test")
 async def detection():
