@@ -1,6 +1,7 @@
 import base64
 import cv2
 from fastapi import HTTPException, APIRouter
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import numpy as np
 from ultralytics import YOLO
@@ -14,7 +15,6 @@ model = YOLO(yolo_weights_path)
 class ImageData(BaseModel):
     base64_image: str
     is_back_camera: bool
-
 
 # full height with yolo (single)
 @router.post("/detect_whole_body")
@@ -95,28 +95,29 @@ async def detect_whole_body(image_data: ImageData):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+class MultiFaceRequest(BaseModel):
+    base64_image: str
+    required_faces: int
+    is_back_camera: bool
+
 # full height with yolo (multiple)
 @router.post("/detect_multiple_whole_body")
-async def detect_multiple_whole_body(image_data: ImageData):
+async def detect_multiple_whole_body(request: MultiFaceRequest):
     try:
-        # Decode the base64 string to bytes
-        image_bytes = base64.b64decode(image_data.base64_image)
-        # Convert bytes to numpy array
+        image_bytes = base64.b64decode(request.base64_image)
         image_np = np.frombuffer(image_bytes, np.uint8)
-        # Decode the numpy array to an image
         img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
 
         if img is None:
-            raise ValueError("이미지를 디코딩할 수 없습니다.")
+            raise HTTPException(status_code=400, detail="이미지를 디코딩할 수 없습니다.")
 
         # 전면 카메라의 경우 이미지 좌우 반전
-        if not image_data.is_back_camera:
+        if not request.is_back_camera:
             img = cv2.flip(img, 1)
 
         # apply
         results = model(img)
         message = ""
-        ppl = True
         boxes = []
 
         # 결과 시각화
@@ -124,24 +125,25 @@ async def detect_multiple_whole_body(image_data: ImageData):
             for bbox in result.boxes:
                 class_id = int(bbox.cls[0])  # 클래스 ID
                 conf = bbox.conf[0]  # 신뢰도
-                if class_id == 0:
-                    if conf > 0.7:
-                        ppl = False
-                        x1, y1, x2, y2 = map(int, bbox.xyxy[0])  # 좌표
-                        boxes.append({
-                            "x1": x1,
-                            "y1": y1,
-                            "x2": x2,
-                            "y2": y2,
-                            "class_id": class_id,
-                            "conf": conf
-                        })
-        if ppl:
+                if conf > 0.7:
+                    x1, y1, x2, y2 = map(int, bbox.xyxy[0])  # 좌표
+                    boxes.append({
+                        "x1": x1,
+                        "y1": y1,
+                        "x2": x2,
+                        "y2": y2,
+                        "class_id": class_id,
+                        "conf": conf
+                    })
+
+        plen = len(boxes)
+        if plen == 0:
             message = "얼굴을 찾을 수 없습니다. 카메라를 조정하십시오."
         else:
-            sorted(boxes, key=lambda x: x['x1'])
-
+            sorted(boxes, key=lambda x: x['x'], reverse=True)
+            bbox = result.boxes[0]
             message = f"화면에 {len(boxes)}명이 있습니다."
+
             for box in boxes:
                 x1, y1, x2, y2 = box['x1'], box['x2'], box['y1'], box['y2']
                 # label = f"{class_id}: {conf:.2f}"  # 레이블 텍스트
@@ -151,14 +153,7 @@ async def detect_multiple_whole_body(image_data: ImageData):
                 # cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 # cv2.putText(img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-
-        # 이미지 표시
-        # cv2.imshow('Detection Results', img)
-        # cv2.waitKey(1)
-        # cv2.destroyAllWindows()
-
-        # print("message:", message)
         return {"message": message}
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return JSONResponse(content={"detail": str(e)}, status_code=400)
