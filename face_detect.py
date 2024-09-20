@@ -43,9 +43,15 @@ async def detect_face(image_data: ImageData):
         img_height, img_width, _ = img.shape
 
         if bboxes:
-            bbox = bboxes[0]["bbox"]
-            confidence = bboxes[0]["score"][0]
-            #x, y는 바운딩 박스 왼쪽 상단 좌표
+            # 정확도를 기준으로 바운딩 박스(bboxes) 정렬 (내림차순)
+            bboxes = sorted(bboxes, key=lambda x: x["score"][0], reverse=True)
+
+            # 가장 정확도가 높은 얼굴 선택
+            best_bbox = bboxes[0]
+            bbox = best_bbox["bbox"]
+            confidence = best_bbox["score"][0]
+
+            # x, y는 바운딩 박스 왼쪽 상단 좌표
             x, y, w, h = bbox
             right_x = x + w
             bottom_y = y + h
@@ -73,25 +79,29 @@ async def detect_face(image_data: ImageData):
                 elif bottom_y > bottom_bound:
                     message = "카메라를 아래로 옮기십시오"
                 else:
-                    message = "얼굴이 중앙에 있습니다"
+                    message = "촬영하세요"
             else:
                 message = "얼굴 인식 정확도가 낮습니다. 카메라를 조정하십시오."
 
+            '''
             # 중앙 범위 그리기
             cv2.line(img, (int(left_bound), 0), (int(left_bound), img_height), (0, 255, 0), 2)
             cv2.line(img, (int(right_bound), 0), (int(right_bound), img_height), (0, 255, 0), 2)
             cv2.line(img, (0, int(top_bound)), (img_width, int(top_bound)), (0, 255, 0), 2)
             cv2.line(img, (0, int(bottom_bound)), (img_width, int(bottom_bound)), (0, 255, 0), 2)
+            '''
 
         else:
             message = "얼굴을 찾을 수 없습니다. 카메라를 조정하십시오."
 
+        '''
         #인식 후 결과 보기
         window_name = f"Image_{np.random.randint(0, 10000)}"
         print(window_name)
         cv2.imshow(window_name, img)
         cv2.waitKey(1000)
         cv2.destroyAllWindows()
+        '''
 
         print("message:", message)
         return {"message": message}
@@ -137,12 +147,14 @@ async def detect_multiple_face(request: MultiFaceRequest):
 
         required_faces = request.required_faces
 
+        '''
         # 인식 후 결과 보기
         window_name = f"Image_{np.random.randint(0, 10000)}"
         print(window_name)
         cv2.imshow(window_name, img)
         cv2.waitKey(1000)
         cv2.destroyAllWindows()
+        '''
 
         if face_count == required_faces: #화면에 얼굴이 다 들어왔을 때
             # 얼굴의 x 좌표를 기준으로 정렬
