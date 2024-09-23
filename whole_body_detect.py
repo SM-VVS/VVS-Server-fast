@@ -118,7 +118,7 @@ async def detect_multiple_whole_body(request: MultiFaceRequest):
 
         # apply
         results = model(img)
-        message = ""
+        message = []
         boxes = []
 
         # 결과 시각화
@@ -139,7 +139,7 @@ async def detect_multiple_whole_body(request: MultiFaceRequest):
 
         plen = len(boxes)
         if plen == 0:
-            message = "얼굴을 찾을 수 없습니다. 카메라를 조정하십시오."
+            message = "전신을 찾을 수 없습니다. 카메라를 조정하십시오."
         elif len(boxes) != request.required_faces:
             message = f"화면에 {len(boxes)}명이 있습니다."
         else:
