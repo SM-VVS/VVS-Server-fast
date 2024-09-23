@@ -143,7 +143,7 @@ async def detect_multiple_whole_body(request: MultiFaceRequest):
         elif len(boxes) != request.required_faces:
             message = f"화면에 {len(boxes)}명이 있습니다."
         else:
-            sorted(boxes, key=lambda x: x['x'], reverse=True)
+            sorted(boxes, key=lambda x: x['x1'], reverse=True)
 
             # 5% margin
             margin = 0.05
