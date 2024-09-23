@@ -79,7 +79,7 @@ async def detect_face(image_data: ImageData):
                 elif bottom_y > bottom_bound:
                     message = "카메라를 아래로 옮기십시오"
                 else:
-                    message = "촬영하세요"
+                    message = "촬영하겠습니다"
             else:
                 message = "얼굴 인식 정확도가 낮습니다. 카메라를 조정하십시오."
 
@@ -192,7 +192,7 @@ async def detect_multiple_face(request: MultiFaceRequest):
                 return {"message": " ".join(message)}
             else:
                 #완벽할 때 촬영 시작
-                return {"message": "촬영하세요"}
+                return {"message": "촬영하겠습니다"}
         else: #화면에 얼굴 수가 적거나 많을 때
             return {"message": f"화면에 {face_count}명이 있습니다."}
 

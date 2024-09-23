@@ -80,7 +80,7 @@ async def detect_whole_body(image_data: ImageData):
                 elif bbox['y2'] > bottom_bound:
                     message = "카메라를 아래로 옮기십시오"
                 else:
-                    message = "촬영하세요"
+                    message = "촬영하겠습니다"
 
                 # 이미지 표시
                 # cv2.imshow('Detection Results', img)
@@ -171,7 +171,7 @@ async def detect_multiple_whole_body(request: MultiFaceRequest):
             if message:
                 message.append("이동해 주세요")
             else:
-                message = "촬영하세요"
+                message = "촬영하겠습니다"
 
         return {"message": message}
 
